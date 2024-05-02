@@ -36,6 +36,7 @@ def scrape_book(html_soup, book_id):
     book['rating'] = ' '.join(main.find(class_='star-rating') \
                         .get('class')).replace('star-rating', '').strip()
     book['img'] = html_soup.find(class_='thumbnail').find('img').get('src')
+    
     desc = html_soup.find(id='product_description')
     book['description'] = ''
     if desc:
@@ -50,9 +51,7 @@ def scrape_book(html_soup, book_id):
         value = row.find('td').get_text(strip=True)
         book[header] = value
 
-
     db['book_info'].upsert(book, ['book_id'])
-
     print("Data successfully inserted or updated.")
 
 
@@ -70,22 +69,18 @@ def robust_request(url, max_retries=3, delay=2):
 
 
 def lambda_handler(event, context):
-
     base_url = 'http://books.toscrape.com/'
-    
     book_id = event['book_id']
     book_url = base_url + 'catalogue/{}'.format(book_id)
+    
     # Fetch the page
     r = robust_request(book_url)
-
     if r is None:
         return {"status": "error", "message": "Failed to retrieve the book page."}
-    
     r.encoding = 'utf-8'
     html_soup = BeautifulSoup(r.text, 'html.parser')
 
     # Scrape the book data
-
     scrape_book(html_soup, book_id)
     db['books'].upsert({'book_id' : book_id,
                         'last_seen' : datetime.now()
