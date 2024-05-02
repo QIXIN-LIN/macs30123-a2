@@ -1,0 +1,10 @@
+"new"	956
+"one"	953
+"life"	823
+"world"	648
+"book"	538
+"love"	524
+"time"	460
+"story"	417
+"first"	413
+"years"	393
