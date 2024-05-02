@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import dataset
 from datetime import datetime
 import re
+import time
 
 user = os.getenv('DB_USER')
 password = os.getenv('DB_PASSWORD')
@@ -18,7 +19,11 @@ db_url = \
         endpoint,
         port)
 
-db = dataset.connect(db_url)
+try:
+    db = dataset.connect(db_url)
+except Exception as e:
+    print(f"Failed to connect to database: {e}")
+    exit(1)  # Exit if cannot connect to database
 
 
 def scrape_book(html_soup, book_id):
@@ -45,42 +50,37 @@ def scrape_book(html_soup, book_id):
         value = row.find('td').get_text(strip=True)
         book[header] = value
 
-    '''
-    endpoint = os.getenv('DB_ENDPOINT')
-    user = os.getenv('DB_USER')
-    password = os.getenv('DB_PASSWORD')
-    port = os.getenv('DB_PORT')
-    '''
 
     db['book_info'].upsert(book, ['book_id'])
 
     print("Data successfully inserted or updated.")
 
 
-def lambda_handler(event, context):
-    '''
-    user = os.getenv('DB_USER')
-    password = os.getenv('DB_PASSWORD')
-    endpoint = os.getenv('DB_ENDPOINT')
-    port = os.getenv('DB_PORT')
-    '''
+def robust_request(url, max_retries=3, delay=2):
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # Raises an HTTPError for bad responses
+            return response
+        except requests.exceptions.RequestException as e:
+            print(f"Attempt {attempt + 1} failed: {e}")
+            time.sleep(delay)
+    print("Failed to fetch data after several attempts.")
+    return None
 
-    '''
-    db_url = \
-        'mysql+mysqlconnector://{}:{}@{}:{}/books'.format(
-            user,
-            password,
-            endpoint,
-            port)
-    #db = dataset.connect(db_url)
-    '''
+
+def lambda_handler(event, context):
 
     base_url = 'http://books.toscrape.com/'
     
     book_id = event['book_id']
     book_url = base_url + 'catalogue/{}'.format(book_id)
     # Fetch the page
-    r = requests.get(book_url)
+    r = robust_request(book_url)
+
+    if r is None:
+        return {"status": "error", "message": "Failed to retrieve the book page."}
+    
     r.encoding = 'utf-8'
     html_soup = BeautifulSoup(r.text, 'html.parser')
 
