@@ -96,6 +96,6 @@ This modern cloud-based architecture offers both scalability and reliability, en
 
   ### Research Schedule
 
-  May 6-8: Data preprocessing and initial model testing.
-  May 9-16: Implement and refine parallel computing with Dask.
-  May 17-24: Conclude data analysis, finalize GitHub documentation, and prepare the project presentation.
++ May 6-8: Data preprocessing and initial model testing.
++ May 9-16: Implement and refine parallel computing with Dask.
++ May 17-24: Conclude data analysis, finalize GitHub documentation, and prepare the project presentation.
